@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+.venv/
+env/
+.env
+.env.local
+.env.*.local
+
+# Build
+dist/
+build/
+*.egg-info/
+.eggs/
+staticfiles/
+media/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Django
+*.log
+db.sqlite3
+local_settings.py
+
+# ML
+ml/models/*.pkl
+ml/data/raw/*
+!ml/data/raw/.gitkeep
+!ml/models/.gitkeep
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+coverage/
+
+# PWA
+dev-dist/
+
+# Misc
+*.pem
+.cache/
