@@ -30,6 +30,18 @@ INSTALLED_APPS = [
     "django_filters",
     "apps.core",
     "apps.users",
+    "apps.patients",
+    "apps.doctors",
+    "apps.receptionists",
+    "apps.treatments",
+    "apps.patient_treatments",
+    "apps.appointments",
+    "apps.notifications",
+    "apps.clinical_notes",
+    "apps.payments",
+    "apps.audit_logs",
+    "apps.ai_predictions",
+    "apps.ai_interventions",
 ]
 
 MIDDLEWARE = [
@@ -119,7 +131,11 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
-    "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
+    "DEFAULT_FILTER_BACKENDS": (
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.SearchFilter",
+        "rest_framework.filters.OrderingFilter",
+    ),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
@@ -147,3 +163,4 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
 
 OTP_EXPIRY_MINUTES = int(os.getenv("OTP_EXPIRY_MINUTES", "10"))
+CLINIC_NAME = os.getenv("CLINIC_NAME", "DentalAI Clinic")
