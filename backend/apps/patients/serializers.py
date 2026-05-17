@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.patients.models import Patient
-from apps.patients.services import dummy_risk_score
+from apps.patients.services import get_patient_risk_level, get_patient_risk_score
 from apps.users.serializers import UserSerializer
 
 
@@ -11,6 +11,7 @@ class PatientSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(source="user.full_name", read_only=True)
     email = serializers.EmailField(source="user.email", read_only=True)
     risk_score = serializers.SerializerMethodField()
+    risk_level = serializers.SerializerMethodField()
 
     class Meta:
         model = Patient
@@ -28,10 +29,14 @@ class PatientSerializer(serializers.ModelSerializer):
             "medical_notes",
             "blood_group",
             "risk_score",
+            "risk_level",
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("id", "created_at", "updated_at", "risk_score")
+        read_only_fields = ("id", "created_at", "updated_at", "risk_score", "risk_level")
 
     def get_risk_score(self, obj):
-        return dummy_risk_score(obj.id)
+        return get_patient_risk_score(obj)
+
+    def get_risk_level(self, obj):
+        return get_patient_risk_level(obj)

@@ -16,9 +16,25 @@ def get_patients_queryset(user):
 
 
 def dummy_risk_score(patient_id) -> float:
-    """Placeholder risk score until ML Phase 4."""
+    """Fallback risk score when no model prediction exists."""
     digest = hashlib.md5(str(patient_id).encode()).hexdigest()
     return round(int(digest[:4], 16) / 65535 * 100, 1)
+
+
+def get_patient_risk_score(patient) -> float:
+    from apps.ai_predictions.services.predictor import get_latest_risk_score
+
+    score = get_latest_risk_score(patient)
+    if score is None:
+        return dummy_risk_score(patient.id)
+    return score
+
+
+def get_patient_risk_level(patient):
+    from apps.ai_predictions.services.predictor import get_latest_prediction
+
+    prediction = get_latest_prediction(patient)
+    return prediction.risk_level if prediction else None
 
 
 @transaction.atomic
