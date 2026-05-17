@@ -49,3 +49,4 @@ dev-dist/
 # Misc
 *.pem
 .cache/
+local_setup.md
