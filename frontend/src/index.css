@@ -1,51 +1,67 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --primary: 173 80% 36%;
+    --card-foreground: 222 47% 11%;
+    --primary: 173 58% 39%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 173 58% 95%;
-    --accent-foreground: 173 80% 25%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 173 80% 36%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 173 45% 94%;
+    --accent-foreground: 173 58% 28%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 173 58% 39%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --radius: 0.625rem;
+    --popover-foreground: 222 47% 11%;
+    --sidebar: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-accent: 173 45% 94%;
+    --risk-low: 152 65% 40%;
+    --risk-medium: 35 92% 52%;
+    --risk-high: 0 78% 55%;
+    --radius: 0.75rem;
   }
 
   .dark {
-    --background: 222.2 47% 6%;
+    --background: 222 47% 5%;
     --foreground: 210 40% 98%;
-    --card: 222.2 47% 8%;
+    --card: 222 47% 7%;
     --card-foreground: 210 40% 98%;
-    --primary: 173 70% 42%;
+    --primary: 173 55% 45%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 217.2 32.6% 14%;
+    --secondary: 217 33% 12%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 14%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 173 40% 15%;
-    --accent-foreground: 173 70% 65%;
-    --destructive: 0 62.8% 50%;
+    --muted: 217 33% 12%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 173 35% 14%;
+    --accent-foreground: 173 55% 65%;
+    --destructive: 0 63% 45%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 173 70% 42%;
-    --popover: 222.2 47% 8%;
+    --border: 217 33% 15%;
+    --input: 217 33% 15%;
+    --ring: 173 55% 45%;
+    --popover: 222 47% 8%;
     --popover-foreground: 210 40% 98%;
+    --sidebar: 222 47% 6%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 14%;
+    --sidebar-accent: 173 35% 12%;
+    --risk-low: 152 60% 46%;
+    --risk-medium: 35 92% 58%;
+    --risk-high: 0 80% 62%;
   }
 
   * {
@@ -54,5 +70,64 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  ::selection {
+    @apply bg-primary/20 text-foreground;
+  }
+}
+
+@layer components {
+  .page-gradient {
+    @apply bg-gradient-to-br from-background via-background to-teal-50/30 dark:from-background dark:via-background dark:to-teal-950/20;
+  }
+
+  .glass-card {
+    @apply rounded-2xl border border-border/50 bg-card/80 shadow-card backdrop-blur-sm;
+  }
+
+  .glass-panel {
+    @apply rounded-2xl border border-border/40 bg-card/60 backdrop-blur-md;
+  }
+
+  .nav-item-active {
+    @apply bg-primary/10 text-primary shadow-sm;
+  }
+
+  .hero-gradient {
+    @apply bg-gradient-to-br from-primary/10 via-teal-50/50 to-cyan-50/30 dark:from-primary/15 dark:via-teal-950/30 dark:to-slate-900/50;
+  }
+}
+
+@layer utilities {
+  .shadow-card {
+    box-shadow:
+      0 1px 2px 0 rgb(0 0 0 / 0.04),
+      0 4px 16px -4px rgb(15 118 110 / 0.1);
+  }
+
+  .shadow-elevated {
+    box-shadow:
+      0 4px 6px -1px rgb(0 0 0 / 0.05),
+      0 10px 24px -6px rgb(15 118 110 / 0.12);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-muted-foreground/30;
   }
 }

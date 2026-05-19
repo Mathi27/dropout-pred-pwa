@@ -41,7 +41,7 @@ export function LoginPage() {
       animate={{ opacity: 1, y: 0 }}
       className="w-full max-w-md"
     >
-      <Card className="border-0 shadow-card">
+      <Card className="glass-card border-0 shadow-elevated">
         <CardHeader className="space-y-1 text-center">
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
             <span className="text-xl font-bold text-primary">D</span>
@@ -64,7 +64,12 @@ export function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <motion.div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link to="/forgot-password" className="text-xs text-primary hover:underline">
+                  Forgot password?
+                </Link>
+              </motion.div>
               <Input
                 id="password"
                 type="password"
@@ -74,11 +79,16 @@ export function LoginPage() {
                 autoComplete="current-password"
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full rounded-xl" disabled={loading}>
               {loading ? "Signing in…" : "Sign in"}
             </Button>
           </form>
-          <p className="mt-6 text-center text-sm text-muted-foreground">
+          <p className="mt-4 text-center text-sm text-muted-foreground">
+            <Link to="/otp-login" className="font-medium text-primary hover:underline">
+              Sign in with OTP
+            </Link>
+          </p>
+          <p className="mt-2 text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
             <Link to="/register" className="font-medium text-primary hover:underline">
               Create account
