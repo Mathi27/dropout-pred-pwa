@@ -110,6 +110,9 @@ def get_admin_analytics() -> dict:
     deliveries = DeliveryTracking.objects.filter(created_at__gte=(timezone.now() - timedelta(days=30)))
     delivery_total = deliveries.count()
     delivered = deliveries.filter(status=DeliveryStatus.DELIVERED).count()
+    delivery_status_counts = list(
+        deliveries.values("status").annotate(count=Count("id")).order_by("status")
+    )
     retry_rate = (
         round((deliveries.filter(attempt__gt=1).count() / delivery_total) * 100, 1)
         if delivery_total
@@ -230,6 +233,7 @@ def get_admin_analytics() -> dict:
             "delivery_success_rate": delivery_success_rate,
             "retry_rate": retry_rate,
             "impact": impact,
+            "delivery_status_counts": delivery_status_counts,
         },
         "communication_effectiveness": {
             "notification_read_rate": notification_read_rate,

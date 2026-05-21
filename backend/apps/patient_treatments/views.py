@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from apps.core.permissions import IsAdmin, IsDoctorOrAdmin, IsStaffRole
+from apps.core.permissions import IsDoctorOrAdmin
 from apps.core.viewsets import SoftDeleteModelViewSet
 from apps.patient_treatments.filters import PatientTreatmentFilter
 from apps.patient_treatments.serializers import PatientTreatmentSerializer
@@ -13,13 +13,13 @@ from apps.patient_treatments.services import get_patient_treatments_queryset, up
 
 class PatientTreatmentViewSet(SoftDeleteModelViewSet):
     serializer_class = PatientTreatmentSerializer
-    permission_classes = [IsAuthenticated, IsStaffRole]
+    permission_classes = [IsAuthenticated]
     filterset_class = PatientTreatmentFilter
 
     def get_permissions(self):
         if self.action in ("create", "update", "partial_update", "destroy", "update_progress"):
             return [IsAuthenticated(), IsDoctorOrAdmin()]
-        return super().get_permissions()
+        return [IsAuthenticated()]
 
     def get_queryset(self):
         return get_patient_treatments_queryset(self.request.user)

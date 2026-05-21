@@ -24,7 +24,7 @@ class PatientViewSet(SoftDeleteModelViewSet):
         if self.action == "me":
             return [IsAuthenticated(), IsPatient()]
         if self.action in ("list", "retrieve", "risk_sorted"):
-            return [IsAuthenticated(), IsDoctorOrAdmin()]
+            return [IsAuthenticated(), IsStaffRole()]
         if self.action in ("create", "update", "partial_update", "destroy"):
             return [IsAuthenticated(), IsAdmin()]
         return super().get_permissions()

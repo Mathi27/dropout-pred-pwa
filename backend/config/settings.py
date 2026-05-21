@@ -3,6 +3,8 @@ from datetime import timedelta
 from pathlib import Path
 from urllib.parse import urlparse
 
+from celery.schedules import crontab
+
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -162,5 +164,42 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
 
+CELERY_BEAT_SCHEDULE = {
+    "ai-daily-prediction-simulation": {
+        "task": "apps.ai_predictions.tasks.daily_prediction_simulation_task",
+        "schedule": crontab(hour=2, minute=30),
+    },
+    "ai-intervention-queue": {
+        "task": "apps.ai_interventions.tasks.queue_interventions_task",
+        "schedule": crontab(minute=0, hour="*/1"),
+    },
+    "ai-delivery-retries": {
+        "task": "apps.ai_interventions.tasks.retry_failed_deliveries_task",
+        "schedule": crontab(minute=20, hour="*/2"),
+    },
+    "ai-analytics-refresh": {
+        "task": "apps.ai_predictions.tasks.refresh_analytics_task",
+        "schedule": crontab(minute="*/30"),
+    },
+    "ai-risk-threshold-monitor": {
+        "task": "apps.ai_predictions.tasks.monitor_risk_thresholds_task",
+        "schedule": crontab(minute=10, hour="*/6"),
+    },
+}
+
 OTP_EXPIRY_MINUTES = int(os.getenv("OTP_EXPIRY_MINUTES", "10"))
 CLINIC_NAME = os.getenv("CLINIC_NAME", "DentalAI Clinic")
+
+AI_PREDICTION_COOLDOWN_DAYS = int(os.getenv("AI_PREDICTION_COOLDOWN_DAYS", "1"))
+AI_INTERVENTION_COOLDOWN_DAYS = int(os.getenv("AI_INTERVENTION_COOLDOWN_DAYS", "7"))
+AI_INTERVENTION_MAX_QUEUE = int(os.getenv("AI_INTERVENTION_MAX_QUEUE", "200"))
+AI_RISK_ESCALATION_DELTA = float(os.getenv("AI_RISK_ESCALATION_DELTA", "0.12"))
+AI_RISK_ESCALATION_MIN_PROB = float(os.getenv("AI_RISK_ESCALATION_MIN_PROB", "0.7"))
+AI_RISK_ESCALATION_COOLDOWN_DAYS = int(os.getenv("AI_RISK_ESCALATION_COOLDOWN_DAYS", "7"))
+AI_RISK_RISING_DELTA = float(os.getenv("AI_RISK_RISING_DELTA", "0.08"))
+AI_HIGH_RISK_SHARE_THRESHOLD = float(os.getenv("AI_HIGH_RISK_SHARE_THRESHOLD", "0.25"))
+AI_RISK_MONITOR_DAYS = int(os.getenv("AI_RISK_MONITOR_DAYS", "7"))
+AI_RISK_MONITOR_MIN_PREDICTIONS = int(os.getenv("AI_RISK_MONITOR_MIN_PREDICTIONS", "25"))
+AI_RETRY_MAX_ATTEMPTS = int(os.getenv("AI_RETRY_MAX_ATTEMPTS", "3"))
+ADMIN_ANALYTICS_CACHE_TTL = int(os.getenv("ADMIN_ANALYTICS_CACHE_TTL", "300"))
+AI_ANALYTICS_CACHE_TTL = int(os.getenv("AI_ANALYTICS_CACHE_TTL", "300"))

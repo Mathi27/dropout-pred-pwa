@@ -2,6 +2,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from apps.core.permissions import IsAdmin
 from apps.core.viewsets import SoftDeleteModelViewSet
+from apps.receptionists.models import Receptionist
 from apps.receptionists.serializers import ReceptionistSerializer
 from apps.receptionists.services import get_receptionists_queryset
 
