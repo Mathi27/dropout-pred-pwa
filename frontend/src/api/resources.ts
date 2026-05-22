@@ -11,14 +11,37 @@ export const treatmentsApi = {
   list: () => apiClient.get<PaginatedResponse<{ id: string; name: string }>>("/treatments/"),
 };
 
+export const doctorsApi = {
+  list: (params?: Record<string, string>) =>
+    apiClient.get<PaginatedResponse<{ id: string; full_name: string; specialization?: string; is_available?: boolean }>>(
+      "/doctors/",
+      { params },
+    ),
+};
+
 export const patientTreatmentsApi = {
   list: (params?: Record<string, string>) =>
     apiClient.get<PaginatedResponse<PatientTreatment>>("/patient-treatments/", { params }),
+  update: (id: string, data: Partial<PatientTreatment>) =>
+    apiClient.patch<PatientTreatment>(`/patient-treatments/${id}/`, data),
+  updateProgress: (id: string, progress_percent: number) =>
+    apiClient.post<PatientTreatment>(`/patient-treatments/${id}/update-progress/`, { progress_percent }),
 };
 
 export const paymentsApi = {
   list: (params?: Record<string, string>) =>
     apiClient.get<PaginatedResponse<Payment>>("/payments/", { params }),
+  create: (data: {
+    patient_id: string;
+    amount: number;
+    payment_date: string;
+    status?: string;
+    method?: string;
+    reference?: string;
+    description?: string;
+  }) => apiClient.post<Payment>("/payments/", data),
+  update: (id: string, data: Partial<Payment>) =>
+    apiClient.patch<Payment>(`/payments/${id}/`, data),
 };
 
 export const clinicalNotesApi = {
@@ -39,4 +62,6 @@ export const usersApi = {
       "/users/",
       { params },
     ),
+  update: (id: string, data: Partial<{ role: string; is_active: boolean }>) =>
+    apiClient.patch(`/users/${id}/`, data),
 };

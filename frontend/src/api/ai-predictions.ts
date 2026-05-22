@@ -3,6 +3,7 @@ import type {
   AIPrediction,
   AIAnalyticsOverview,
   ModelMetrics,
+  PatientJourney,
   PatientTimelineEvent,
   RiskTrendPoint,
   ShapExplanation,
@@ -31,6 +32,10 @@ export const aiPredictionsApi = {
     apiClient.get<AIAnalyticsOverview>("/ai/analytics/overview/", { params: { days } }),
   timeline: (patientId: string, days = 120) =>
     apiClient.get<{ events: PatientTimelineEvent[] }>("/ai/predictions/timeline/", {
+      params: { patient_id: patientId, days },
+    }),
+  journey: (patientId: string, days = 180) =>
+    apiClient.get<PatientJourney>("/ai/predictions/journey/", {
       params: { patient_id: patientId, days },
     }),
 };
