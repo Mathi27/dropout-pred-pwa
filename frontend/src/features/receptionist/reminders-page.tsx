@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Send } from "lucide-react";
 import { toast } from "sonner";
@@ -11,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export function RemindersPage() {
+  const qc = useQueryClient();
   const [userId, setUserId] = useState("");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -26,6 +28,8 @@ export function RemindersPage() {
         body,
         notification_type: "reminder",
       });
+      qc.invalidateQueries({ queryKey: ["notifications"], exact: false });
+      qc.invalidateQueries({ queryKey: ["notifications-unread"] });
       toast.success("Reminder sent");
       setTitle("");
       setBody("");
@@ -40,7 +44,7 @@ export function RemindersPage() {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
       <PageHeader title="Send reminder" description="Manual patient notification" />
 
-      <Card className="glass-card max-w-lg border-0">
+      <Card className="max-w-lg ">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">

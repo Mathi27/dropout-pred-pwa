@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import React from "react";
 import { Activity, Brain, Gauge, TrendingUp, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -35,6 +35,7 @@ export function RiskAnalyticsPage() {
     data: metrics,
     isLoading: metricsLoading,
     isError: metricsError,
+    refetch: refetchMetrics,
   } = useQuery({
     queryKey: ["ai-metrics"],
     queryFn: () => aiPredictionsApi.metrics().then((r) => r.data),
@@ -44,6 +45,7 @@ export function RiskAnalyticsPage() {
   const {
     data: trends,
     isLoading: trendsLoading,
+    refetch: refetchTrends,
   } = useQuery({
     queryKey: ["ai-risk-trends"],
     queryFn: () => aiPredictionsApi.riskTrends(30).then((r) => r.data),
@@ -52,6 +54,7 @@ export function RiskAnalyticsPage() {
   const {
     data: overview,
     isLoading: overviewLoading,
+    refetch: refetchOverview,
   } = useQuery({
     queryKey: ["ai-overview"],
     queryFn: () => aiPredictionsApi.overview(30).then((r) => r.data),
@@ -60,32 +63,62 @@ export function RiskAnalyticsPage() {
   const {
     data: highRisk,
     isLoading: highRiskLoading,
+    refetch: refetchHighRisk,
+    isRefetching: highRiskRefetching,
   } = useQuery({
     queryKey: ["ai-high-risk"],
     queryFn: () => aiPredictionsApi.highRisk().then((r) => r.data),
   });
 
-  const trendSeries = trends ?? [];
-  const totalCounts = trendSeries.reduce(
-    (acc, day) => {
-      acc.low += day.low;
-      acc.medium += day.medium;
-      acc.high += day.high;
-      acc.total += day.total;
-      return acc;
-    },
-    { low: 0, medium: 0, high: 0, total: 0 },
-  );
-  const riskDistribution = overview?.risk_distribution ?? {
-    low: totalCounts.low,
-    medium: totalCounts.medium,
-    high: totalCounts.high,
+  const handleRefresh = () => {
+    refetchMetrics();
+    refetchTrends();
+    refetchOverview();
+    refetchHighRisk();
   };
-  const totalPredictions = riskDistribution.low + riskDistribution.medium + riskDistribution.high;
-  const highShare = totalPredictions ? riskDistribution.high / totalPredictions : 0;
-  const stableShare = totalPredictions
-    ? (riskDistribution.low + riskDistribution.medium) / totalPredictions
-    : 0;
+
+  const {
+    trendSeries,
+    totalCounts,
+    riskDistribution,
+    totalPredictions,
+    highShare,
+    stableShare,
+    recentHighRisk,
+  } = React.useMemo(() => {
+    const series = trends ?? [];
+    const counts = series.reduce(
+      (acc, day) => {
+        acc.low += day.low;
+        acc.medium += day.medium;
+        acc.high += day.high;
+        acc.total += day.total;
+        return acc;
+      },
+      { low: 0, medium: 0, high: 0, total: 0 },
+    );
+    const riskDist = overview?.risk_distribution ?? {
+      low: counts.low,
+      medium: counts.medium,
+      high: counts.high,
+    };
+    const total = riskDist.low + riskDist.medium + riskDist.high;
+    
+    const recent = (highRisk ?? [])
+      .slice()
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 6);
+
+    return {
+      trendSeries: series,
+      totalCounts: counts,
+      riskDistribution: riskDist,
+      totalPredictions: total,
+      highShare: total ? riskDist.high / total : 0,
+      stableShare: total ? (riskDist.low + riskDist.medium) / total : 0,
+      recentHighRisk: recent,
+    };
+  }, [trends, overview?.risk_distribution, highRisk]);
 
   const trendCounts = overview?.risk_trends ?? { rising: 0, falling: 0, stable: 0 };
   const confidenceDistribution = overview?.confidence_distribution ?? { low: 0, medium: 0, high: 0 };
@@ -94,27 +127,27 @@ export function RiskAnalyticsPage() {
   const segmentation = overview?.segmentation ?? [];
   const interventionImpact = overview?.intervention_impact ?? { improved: 0, worsened: 0, stable: 0 };
   const notificationEffectiveness = overview?.notification_effectiveness ?? {};
-  const notificationData = [
+  
+  const notificationData = React.useMemo(() => [
     { risk: "Low", read_rate: notificationEffectiveness.low?.read_rate ?? 0 },
     { risk: "Medium", read_rate: notificationEffectiveness.medium?.read_rate ?? 0 },
     { risk: "High", read_rate: notificationEffectiveness.high?.read_rate ?? 0 },
-  ];
+  ], [notificationEffectiveness]);
 
-  const recentWindow = trendSeries.slice(-7);
-  const previousWindow = trendSeries.slice(-14, -7);
-  const sumWindow = (items: RiskTrendPoint[], key: "low" | "medium" | "high") =>
-    items.reduce((sum, item) => sum + item[key], 0);
-  const recentHigh = sumWindow(recentWindow, "high");
-  const previousHigh = sumWindow(previousWindow, "high");
-  const recentStable = sumWindow(recentWindow, "low") + sumWindow(recentWindow, "medium");
-  const previousStable = sumWindow(previousWindow, "low") + sumWindow(previousWindow, "medium");
-  const highDelta = recentHigh - previousHigh;
-  const stableDelta = recentStable - previousStable;
-
-  const recentHighRisk = (highRisk ?? [])
-    .slice()
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 6);
+  const { highDelta, stableDelta } = React.useMemo(() => {
+    const recentWindow = trendSeries.slice(-7);
+    const previousWindow = trendSeries.slice(-14, -7);
+    const sumWindow = (items: RiskTrendPoint[], key: "low" | "medium" | "high") =>
+      items.reduce((sum, item) => sum + item[key], 0);
+    const recentHigh = sumWindow(recentWindow, "high");
+    const previousHigh = sumWindow(previousWindow, "high");
+    const recentStable = sumWindow(recentWindow, "low") + sumWindow(recentWindow, "medium");
+    const previousStable = sumWindow(previousWindow, "low") + sumWindow(previousWindow, "medium");
+    return {
+      highDelta: recentHigh - previousHigh,
+      stableDelta: recentStable - previousStable,
+    };
+  }, [trendSeries]);
 
   const aucValue = metrics?.metrics?.auc;
   const trainedAt = metrics?.model_version?.trained_at
@@ -128,27 +161,33 @@ export function RiskAnalyticsPage() {
   }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+    <div className="space-y-8">
       <PageHeader
         title="AI risk intelligence"
         description="Dropout risk, adherence signals, and model performance"
         titleClassName="font-display text-4xl"
         descriptionClassName="max-w-xl"
       >
-        <Button variant="outline" asChild className="rounded-xl">
-          <Link to="/patients">Review patients</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="rounded-xl" onClick={handleRefresh} disabled={highRiskRefetching}>
+            <Activity className="mr-2 h-4 w-4" />
+            {highRiskRefetching ? "Refreshing..." : "Refresh data"}
+          </Button>
+          <Button variant="outline" asChild className="rounded-xl">
+            <Link to="/patients">Review patients</Link>
+          </Button>
+        </div>
       </PageHeader>
 
       <div className="grid gap-6 lg:grid-cols-12">
-        <Card className="glass-card hero-gradient border-0 lg:col-span-5">
+        <Card className="lg:col-span-5">
           <CardHeader>
             <CardTitle className="text-lg font-display">AI model health</CardTitle>
             <CardDescription>Champion model calibration and performance</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             {metricsError ? (
-              <div className="rounded-2xl border border-dashed border-border/60 bg-card/70 p-4 text-sm text-muted-foreground">
+              <div className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-4 text-sm text-muted-foreground">
                 Train a model to unlock AI insights.
               </div>
             ) : (
@@ -161,7 +200,7 @@ export function RiskAnalyticsPage() {
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">Calibration stable</p>
                   </div>
-                  <div className="rounded-2xl border border-border/60 bg-card/70 p-3 text-xs">
+                  <div className="rounded-xl border border-border/60 bg-muted/30 p-3 text-xs">
                     <p className="text-muted-foreground">Active model</p>
                     <p className="mt-1 font-semibold text-foreground">
                       {metrics?.model_version?.name ?? "—"}
@@ -170,25 +209,25 @@ export function RiskAnalyticsPage() {
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div className="rounded-xl border border-border/60 bg-card/70 p-3">
+                  <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
                     <p className="text-xs text-muted-foreground">Precision</p>
                     <p className="mt-1 text-lg font-semibold">
                       {metrics?.metrics?.precision?.toFixed(2) ?? "—"}
                     </p>
                   </div>
-                  <div className="rounded-xl border border-border/60 bg-card/70 p-3">
+                  <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
                     <p className="text-xs text-muted-foreground">Recall</p>
                     <p className="mt-1 text-lg font-semibold">
                       {metrics?.metrics?.recall?.toFixed(2) ?? "—"}
                     </p>
                   </div>
-                  <div className="rounded-xl border border-border/60 bg-card/70 p-3">
+                  <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
                     <p className="text-xs text-muted-foreground">F1 score</p>
                     <p className="mt-1 text-lg font-semibold">
                       {metrics?.metrics?.f1?.toFixed(2) ?? "—"}
                     </p>
                   </div>
-                  <div className="rounded-xl border border-border/60 bg-card/70 p-3">
+                  <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
                     <p className="text-xs text-muted-foreground">Brier</p>
                     <p className="mt-1 text-lg font-semibold">
                       {metrics?.metrics?.brier?.toFixed(3) ?? "—"}
@@ -233,14 +272,14 @@ export function RiskAnalyticsPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-12">
-        <Card className="glass-card border-0 lg:col-span-7">
+        <Card className="lg:col-span-7">
           <CardHeader>
             <CardTitle className="text-lg">Risk trends</CardTitle>
             <CardDescription>Low, medium, and high risk over the last 30 days</CardDescription>
           </CardHeader>
           <CardContent>
             {trendsLoading ? (
-              <Skeleton className="h-[300px] w-full rounded-2xl" />
+              <Skeleton className="h-[300px] w-full rounded-lg" />
             ) : trendSeries.length ? (
               <RiskTrendChart data={trendSeries} />
             ) : (
@@ -254,14 +293,14 @@ export function RiskAnalyticsPage() {
         </Card>
 
         <div className="grid gap-6 lg:col-span-5">
-          <Card className="glass-card border-0">
+          <Card className="">
             <CardHeader>
               <CardTitle className="text-lg">Risk distribution</CardTitle>
               <CardDescription>Share of predictions by risk tier</CardDescription>
             </CardHeader>
             <CardContent>
               {trendsLoading ? (
-                <Skeleton className="h-[240px] w-full rounded-2xl" />
+                <Skeleton className="h-[240px] w-full rounded-lg" />
               ) : (
                 <>
                   <RiskDistributionChart
@@ -273,15 +312,15 @@ export function RiskAnalyticsPage() {
                   />
                   {totalPredictions ? (
                     <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
-                      <div className="rounded-xl border border-border/50 p-2 text-center">
+                      <div className="rounded-lg border border-border/60 p-2 text-center">
                         <p className="text-muted-foreground">Low</p>
                         <p className="mt-1 font-semibold">{Math.round((riskDistribution.low / totalPredictions) * 100)}%</p>
                       </div>
-                      <div className="rounded-xl border border-border/50 p-2 text-center">
+                      <div className="rounded-lg border border-border/60 p-2 text-center">
                         <p className="text-muted-foreground">Medium</p>
                         <p className="mt-1 font-semibold">{Math.round((riskDistribution.medium / totalPredictions) * 100)}%</p>
                       </div>
-                      <div className="rounded-xl border border-border/50 p-2 text-center">
+                      <div className="rounded-lg border border-border/60 p-2 text-center">
                         <p className="text-muted-foreground">High</p>
                         <p className="mt-1 font-semibold">{Math.round((riskDistribution.high / totalPredictions) * 100)}%</p>
                       </div>
@@ -292,7 +331,7 @@ export function RiskAnalyticsPage() {
             </CardContent>
           </Card>
 
-          <Card className="glass-card border-0">
+          <Card className="">
             <CardHeader>
               <CardTitle className="text-lg">Cohort comparison</CardTitle>
               <CardDescription>High-risk vs stable engagement cohorts</CardDescription>
@@ -306,7 +345,7 @@ export function RiskAnalyticsPage() {
                 />
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-border/60 bg-card/80 p-4">
+                  <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
                     <p className="text-xs uppercase tracking-wider text-muted-foreground">High risk</p>
                     <p className="mt-2 text-2xl font-semibold">{totalCounts.high}</p>
                     <p className="text-xs text-muted-foreground">
@@ -322,7 +361,7 @@ export function RiskAnalyticsPage() {
                       {highDelta >= 0 ? "+" : ""}{highDelta} vs previous 7d
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-border/60 bg-card/80 p-4">
+                  <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
                     <p className="text-xs uppercase tracking-wider text-muted-foreground">Stable cohort</p>
                     <p className="mt-2 text-2xl font-semibold">{totalCounts.low + totalCounts.medium}</p>
                     <p className="text-xs text-muted-foreground">
@@ -338,7 +377,7 @@ export function RiskAnalyticsPage() {
                       {stableDelta >= 0 ? "+" : ""}{stableDelta} vs previous 7d
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-border/60 bg-card/80 p-4">
+                  <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
                     <p className="text-xs uppercase tracking-wider text-muted-foreground">Risk shifts</p>
                     <div className="mt-3 space-y-2 text-sm">
                       <div className="flex items-center justify-between">
@@ -363,14 +402,14 @@ export function RiskAnalyticsPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-12">
-        <Card className="glass-card border-0 lg:col-span-6">
+        <Card className="lg:col-span-6">
           <CardHeader>
             <CardTitle className="text-lg">Treatment completion trends</CardTitle>
             <CardDescription>Average completion progression (12 weeks)</CardDescription>
           </CardHeader>
           <CardContent>
             {overviewLoading ? (
-              <Skeleton className="h-[240px] w-full rounded-2xl" />
+              <Skeleton className="h-[240px] w-full rounded-lg" />
             ) : completionTrend.length ? (
               <CompletionTrendChart data={completionTrend} />
             ) : (
@@ -383,14 +422,14 @@ export function RiskAnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card className="glass-card border-0 lg:col-span-3">
+        <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle className="text-lg">Adherence heatmap</CardTitle>
             <CardDescription>Miss rate by weekday</CardDescription>
           </CardHeader>
           <CardContent>
             {overviewLoading ? (
-              <Skeleton className="h-[220px] w-full rounded-2xl" />
+              <Skeleton className="h-[220px] w-full rounded-lg" />
             ) : adherenceHeatmap.length ? (
               <AdherenceHeatmap data={adherenceHeatmap} />
             ) : (
@@ -403,14 +442,14 @@ export function RiskAnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card className="glass-card border-0 lg:col-span-3">
+        <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle className="text-lg">Prediction confidence</CardTitle>
             <CardDescription>Model certainty distribution</CardDescription>
           </CardHeader>
           <CardContent>
             {overviewLoading ? (
-              <Skeleton className="h-[220px] w-full rounded-2xl" />
+              <Skeleton className="h-[220px] w-full rounded-lg" />
             ) : (
               <ConfidenceDistributionChart data={confidenceDistribution} />
             )}
@@ -419,14 +458,14 @@ export function RiskAnalyticsPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-12">
-        <Card className="glass-card border-0 lg:col-span-7">
+        <Card className="lg:col-span-7">
           <CardHeader>
             <CardTitle className="text-lg">Patient segmentation</CardTitle>
             <CardDescription>Risk mix by primary treatment category</CardDescription>
           </CardHeader>
           <CardContent>
             {overviewLoading ? (
-              <Skeleton className="h-[260px] w-full rounded-2xl" />
+              <Skeleton className="h-[260px] w-full rounded-lg" />
             ) : segmentation.length ? (
               <SegmentationChart data={segmentation} />
             ) : (
@@ -440,38 +479,38 @@ export function RiskAnalyticsPage() {
         </Card>
 
         <div className="grid gap-6 lg:col-span-5">
-          <Card className="glass-card border-0">
+          <Card className="">
             <CardHeader>
               <CardTitle className="text-lg">Notification effectiveness</CardTitle>
               <CardDescription>Read rate by risk cohort</CardDescription>
             </CardHeader>
             <CardContent>
               {overviewLoading ? (
-                <Skeleton className="h-[220px] w-full rounded-2xl" />
+                <Skeleton className="h-[220px] w-full rounded-lg" />
               ) : (
                 <NotificationEffectivenessChart data={notificationData} />
               )}
             </CardContent>
           </Card>
 
-          <Card className="glass-card border-0">
+          <Card className="">
             <CardHeader>
               <CardTitle className="text-lg">Intervention impact</CardTitle>
               <CardDescription>Risk movement after recent outreach</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 gap-3 text-center text-sm">
-                <div className="rounded-xl border border-border/60 bg-card/80 p-3">
+                <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
                   <p className="text-xs text-muted-foreground">Improved</p>
                   <p className="mt-2 text-lg font-semibold text-emerald-600 dark:text-emerald-400">
                     {interventionImpact.improved}
                   </p>
                 </div>
-                <div className="rounded-xl border border-border/60 bg-card/80 p-3">
+                <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
                   <p className="text-xs text-muted-foreground">Stable</p>
                   <p className="mt-2 text-lg font-semibold">{interventionImpact.stable}</p>
                 </div>
-                <div className="rounded-xl border border-border/60 bg-card/80 p-3">
+                <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
                   <p className="text-xs text-muted-foreground">Worsened</p>
                   <p className="mt-2 text-lg font-semibold text-rose-600 dark:text-rose-400">
                     {interventionImpact.worsened}
@@ -484,14 +523,14 @@ export function RiskAnalyticsPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-12">
-        <Card className="glass-card border-0 lg:col-span-7">
+        <Card className="lg:col-span-7">
           <CardHeader>
             <CardTitle className="text-lg">High-risk patients</CardTitle>
             <CardDescription>Prioritize outreach for likely dropouts</CardDescription>
           </CardHeader>
           <CardContent>
             {highRiskLoading ? (
-              <Skeleton className="h-[260px] w-full rounded-2xl" />
+              <Skeleton className="h-[260px] w-full rounded-lg" />
             ) : !highRisk?.length ? (
               <EmptyState
                 icon={Users}
@@ -538,20 +577,20 @@ export function RiskAnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card className="glass-card border-0 lg:col-span-5">
+        <Card className="lg:col-span-5">
           <CardHeader>
             <CardTitle className="text-lg">Patient risk timeline</CardTitle>
             <CardDescription>Most recent high-risk signals</CardDescription>
           </CardHeader>
           <CardContent>
             {highRiskLoading ? (
-              <Skeleton className="h-[260px] w-full rounded-2xl" />
+              <Skeleton className="h-[260px] w-full rounded-lg" />
             ) : (
               <RiskActivityTimeline predictions={recentHighRisk} />
             )}
           </CardContent>
         </Card>
       </div>
-    </motion.div>
+    </div>
   );
 }

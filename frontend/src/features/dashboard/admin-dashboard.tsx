@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
 import { Activity, Calendar, TrendingUp, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
@@ -41,11 +40,16 @@ export function AdminDashboard() {
   }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+    <div className="space-y-8">
       <PageHeader title="Executive overview" description="Real-time clinic performance metrics">
-        <Button variant="outline" asChild className="rounded-xl">
-          <Link to="/admin/audit">Audit logs</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" asChild className="rounded-xl">
+            <Link to="/admin/analytics">Executive analytics</Link>
+          </Button>
+          <Button variant="outline" asChild className="rounded-xl">
+            <Link to="/admin/audit">Audit logs</Link>
+          </Button>
+        </div>
       </PageHeader>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -56,7 +60,7 @@ export function AdminDashboard() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="glass-card border-0 lg:col-span-2">
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="text-lg">Appointment trends</CardTitle>
             <CardDescription>7-day scheduled vs completed volume</CardDescription>
@@ -66,7 +70,7 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="glass-card border-0">
+        <Card className="">
           <CardHeader>
             <CardTitle className="text-lg">Notifications</CardTitle>
             <CardDescription>Read vs unread distribution</CardDescription>
@@ -97,7 +101,7 @@ export function AdminDashboard() {
         </Card>
       </div>
 
-      <Card className="glass-card border-0">
+      <Card className="">
         <CardHeader>
           <CardTitle className="text-lg">Attendance heatmap</CardTitle>
           <CardDescription>Last 7 days — present count per day</CardDescription>
@@ -106,6 +110,6 @@ export function AdminDashboard() {
           <AttendanceHeatmap data={data?.attendance_heatmap ?? []} />
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 }

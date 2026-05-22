@@ -97,7 +97,7 @@ export function RegisterPage() {
       animate={{ opacity: 1, y: 0 }}
       className="w-full max-w-md"
     >
-      <Card className="border-0 shadow-card">
+      <Card className="">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl">Create account</CardTitle>
           <CardDescription>Join DentalAI for smarter dental care</CardDescription>

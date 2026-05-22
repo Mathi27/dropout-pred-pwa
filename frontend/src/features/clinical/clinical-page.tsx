@@ -23,7 +23,7 @@ export function ClinicalPage() {
       ) : data?.results?.length ? (
         <motion.div className="space-y-3">
           {data.results.map((n) => (
-            <Card key={n.id} className="glass-card border-0 shadow-card">
+            <Card key={n.id} className="">
               <CardContent className="p-4">
                 <p className="text-xs text-muted-foreground">{n.visit_date}</p>
                 <p className="mt-2">{n.content}</p>

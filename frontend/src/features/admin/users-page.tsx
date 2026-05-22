@@ -1,16 +1,29 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 
 import { usersApi } from "@/api/resources";
 import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ROLE_LABELS, type UserRole } from "@/lib/constants";
 
 export function AdminUsersPage() {
+  const qc = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["admin-users"],
     queryFn: () => usersApi.list().then((r) => r.data),
+  });
+
+  const toggleStatus = useMutation({
+    mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) =>
+      usersApi.update(id, { is_active }),
+    onSuccess: () => {
+      toast.success("User status updated");
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+    onError: () => toast.error("Failed to update user status"),
   });
 
   return (
@@ -20,7 +33,7 @@ export function AdminUsersPage() {
       {isLoading ? (
         <Skeleton className="h-64 w-full" />
       ) : (
-        <Card className="glass-card overflow-hidden border-0 shadow-card">
+        <Card className="overflow-hidden ">
           <CardContent className="p-0">
             <table className="w-full text-sm">
               <thead>
@@ -29,6 +42,7 @@ export function AdminUsersPage() {
                   <th className="p-3 font-medium">Email</th>
                   <th className="p-3 font-medium">Role</th>
                   <th className="p-3 font-medium">Status</th>
+                  <th className="p-3 font-medium text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -37,7 +51,7 @@ export function AdminUsersPage() {
                     key={u.id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="border-b last:border-0"
+                    className="border-b last:"
                   >
                     <td className="p-3">{u.full_name}</td>
                     <td className="p-3 text-muted-foreground">{u.email}</td>
@@ -50,6 +64,17 @@ export function AdminUsersPage() {
                       >
                         {u.is_active ? "Active" : "Inactive"}
                       </span>
+                    </td>
+                    <td className="p-3 text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleStatus.mutate({ id: u.id, is_active: !u.is_active })}
+                        disabled={toggleStatus.isPending}
+                        className="h-8 text-xs"
+                      >
+                        {u.is_active ? "Suspend" : "Activate"}
+                      </Button>
                     </td>
                   </motion.tr>
                 ))}

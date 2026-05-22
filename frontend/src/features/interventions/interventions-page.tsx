@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MessageSquare, Send, Shield, Sparkles, Users } from "lucide-react";
+import { toast } from "sonner";
 
 import { aiInterventionsApi } from "@/api/ai-interventions";
 import { aiPredictionsApi } from "@/api/ai-predictions";
@@ -36,6 +36,7 @@ const LANGUAGE_OPTIONS = [
 ];
 
 export function InterventionsPage() {
+  const qc = useQueryClient();
   const role = useAuthStore((state) => state.user?.role);
   const isAdmin = role === "admin";
 
@@ -88,8 +89,18 @@ export function InterventionsPage() {
         .then((r) => r.data),
     onSuccess: async (message) => {
       setPreviewMessage(message);
-      await aiInterventionsApi.simulateDelivery(message.id);
-      refetchHistory();
+      
+      qc.setQueryData(["ai-interventions-history", selectedPatientId], (oldData: any) => {
+        if (!oldData) return [message];
+        return [message, ...oldData];
+      });
+      qc.invalidateQueries({ queryKey: ["ai-interventions-history"], exact: false });
+      qc.invalidateQueries({ queryKey: ["ai-interventions-metrics"] });
+      qc.invalidateQueries({ queryKey: ["ai-interventions-high-risk"] });
+      toast.success("Message sent");
+    },
+    onError: () => {
+      toast.error("Failed to send message");
     },
   });
 
@@ -102,7 +113,7 @@ export function InterventionsPage() {
   }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+    <div className="space-y-8">
       <PageHeader
         title="AI interventions"
         description="Personalized communication studio with multilingual outreach and delivery insights"
@@ -135,7 +146,7 @@ export function InterventionsPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-12">
-        <Card className="glass-card border-0 lg:col-span-7">
+        <Card className="lg:col-span-7">
           <CardHeader>
             <CardTitle className="text-lg">Message preview studio</CardTitle>
             <CardDescription>Draft empathetic messages before triggering delivery</CardDescription>
@@ -194,7 +205,7 @@ export function InterventionsPage() {
                   </label>
                 </div>
 
-                <div className="rounded-2xl border border-border/60 bg-muted/30 p-4 text-sm text-foreground/90">
+                <div className="rounded-xl border border-border/60 bg-muted/30 p-4 text-sm text-foreground/90">
                   {previewMutation.isPending ? (
                     <Skeleton className="h-24 w-full" />
                   ) : previewMessage ? (
@@ -218,7 +229,7 @@ export function InterventionsPage() {
                     disabled={!selectedPatientId || sendMutation.isPending}
                     onClick={() => sendMutation.mutate()}
                   >
-                    {sendMutation.isPending ? "Sending..." : "Send & simulate"}
+                    {sendMutation.isPending ? "Sending..." : "Send message"}
                   </Button>
                 </div>
               </div>
@@ -226,14 +237,14 @@ export function InterventionsPage() {
           </CardContent>
         </Card>
 
-        <Card className="glass-card border-0 lg:col-span-5">
+        <Card className="lg:col-span-5">
           <CardHeader>
             <CardTitle className="text-lg">Communication analytics</CardTitle>
             <CardDescription>Delivery effectiveness and language reach</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {metricsError && !metricsLoading ? (
-              <div className="rounded-2xl border border-dashed border-border/60 bg-card/70 p-4 text-sm text-muted-foreground">
+              <div className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-4 text-sm text-muted-foreground">
                 Admin analytics available for clinic leadership only.
               </div>
             ) : (
@@ -241,7 +252,7 @@ export function InterventionsPage() {
                 <div>
                   <p className="text-xs uppercase tracking-wider text-muted-foreground">Delivery status</p>
                   {metricsLoading ? (
-                    <Skeleton className="mt-3 h-[220px] w-full rounded-2xl" />
+                    <Skeleton className="mt-3 h-[220px] w-full rounded-lg" />
                   ) : (
                     <DeliveryStatusChart data={metrics?.status_counts ?? []} />
                   )}
@@ -249,7 +260,7 @@ export function InterventionsPage() {
                 <div>
                   <p className="text-xs uppercase tracking-wider text-muted-foreground">Language reach</p>
                   {metricsLoading ? (
-                    <Skeleton className="mt-3 h-[220px] w-full rounded-2xl" />
+                    <Skeleton className="mt-3 h-[220px] w-full rounded-lg" />
                   ) : (
                     <LanguageEngagementChart data={metrics?.language_counts ?? []} />
                   )}
@@ -261,43 +272,39 @@ export function InterventionsPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-12">
-        <Card className="glass-card border-0 lg:col-span-7">
+        <Card className="lg:col-span-7">
           <CardHeader>
             <CardTitle className="text-lg">Communication timeline</CardTitle>
             <CardDescription>Chronological interventions for the selected patient</CardDescription>
           </CardHeader>
           <CardContent>
             {historyLoading ? (
-              <Skeleton className="h-[280px] w-full rounded-2xl" />
+              <Skeleton className="h-[280px] w-full rounded-lg" />
             ) : (
               <CommunicationTimeline messages={patientHistory ?? []} />
             )}
           </CardContent>
         </Card>
 
-        <Card className="glass-card border-0 lg:col-span-5">
+        <Card className="lg:col-span-5">
           <CardHeader>
             <CardTitle className="text-lg">High-risk queue</CardTitle>
             <CardDescription>Prioritize personalized outreach</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {highRisk?.length ? (
-              highRisk.slice(0, 8).map((item, index) => (
-                <motion.button
+              highRisk.slice(0, 8).map((item) => (
+                <button
                   key={item.id}
                   type="button"
-                  initial={{ opacity: 0, x: 8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.03 }}
-                  whileHover={{ scale: 1.01 }}
                   onClick={() => {
                     setSelectedPatientId(item.patient_detail?.id ?? null);
                     setPreviewMessage(null);
                   }}
                   className={
                     item.patient_detail?.id === selectedPatientId
-                      ? "w-full rounded-2xl border border-primary/40 bg-primary/10 p-3 text-left"
-                      : "w-full rounded-2xl border border-border/60 bg-card/80 p-3 text-left"
+                      ? "w-full rounded-xl border border-primary/40 bg-primary/10 p-3 text-left transition-colors"
+                      : "w-full rounded-xl border border-border/60 bg-card p-3 text-left transition-colors hover:bg-muted/30"
                   }
                 >
                   <div className="flex items-center justify-between gap-3">
@@ -309,7 +316,7 @@ export function InterventionsPage() {
                     </div>
                     <RiskBadge score={item.risk_score ?? Math.round(item.probability * 100)} level={item.risk_level} />
                   </div>
-                </motion.button>
+                </button>
               ))
             ) : (
               <EmptyState icon={Users} title="No high-risk patients" description="Generate predictions to populate the queue." />
@@ -317,6 +324,6 @@ export function InterventionsPage() {
           </CardContent>
         </Card>
       </div>
-    </motion.div>
+    </div>
   );
 }

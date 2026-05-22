@@ -49,7 +49,7 @@ export function OtpLoginPage() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-      <Card className="border-0 shadow-card">
+      <Card className="">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Sign in with OTP</CardTitle>
           <CardDescription>Passwordless login (UI stub — wire to full flow in Phase 3)</CardDescription>

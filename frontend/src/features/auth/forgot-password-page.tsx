@@ -30,7 +30,7 @@ export function ForgotPasswordPage() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-      <Card className="border-0 shadow-card">
+      <Card className="">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Reset password</CardTitle>
           <CardDescription>We&apos;ll send a verification code to your email</CardDescription>

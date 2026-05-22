@@ -23,7 +23,7 @@ export function AuditLogsPage() {
       ) : data?.results?.length ? (
         <div className="space-y-2">
           {data.results.map((log) => (
-            <Card key={log.id} className="glass-card border-0 shadow-card">
+            <Card key={log.id} className="">
               <CardContent className="flex flex-wrap items-center justify-between gap-2 p-4 text-sm">
                 <div>
                   <p className="font-medium">{log.action}</p>

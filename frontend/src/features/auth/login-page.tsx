@@ -41,7 +41,7 @@ export function LoginPage() {
       animate={{ opacity: 1, y: 0 }}
       className="w-full max-w-md"
     >
-      <Card className="glass-card border-0 shadow-elevated">
+      <Card className="">
         <CardHeader className="space-y-1 text-center">
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
             <span className="text-xl font-bold text-primary">D</span>
@@ -83,15 +83,15 @@ export function LoginPage() {
               {loading ? "Signing in…" : "Sign in"}
             </Button>
           </form>
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            <Link to="/otp-login" className="font-medium text-primary hover:underline">
-              Sign in with OTP
-            </Link>
-          </p>
           <p className="mt-2 text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
             <Link to="/register" className="font-medium text-primary hover:underline">
               Create account
+            </Link>
+          </p>
+          <p className="mt-3 text-center text-xs text-muted-foreground">
+            <Link to="/showcase" className="font-medium text-primary hover:underline">
+              View platform overview
             </Link>
           </p>
         </CardContent>

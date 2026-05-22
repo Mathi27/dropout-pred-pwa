@@ -15,7 +15,7 @@ export function SettingsPage() {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
       <PageHeader title="Settings" description="Profile and preferences" />
 
-      <Card className="glass-card max-w-lg border-0 shadow-card">
+      <Card className="max-w-lg ">
         <CardHeader>
           <CardTitle>Profile</CardTitle>
         </CardHeader>

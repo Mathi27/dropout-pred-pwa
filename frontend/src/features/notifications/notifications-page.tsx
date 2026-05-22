@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Bell } from "lucide-react";
+import { toast } from "sonner";
 
 import { notificationsApi } from "@/api/notifications";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -9,6 +10,7 @@ import { PageSkeleton } from "@/components/shared/page-skeleton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import type { Notification, PaginatedResponse } from "@/types/api";
 
 export function NotificationsPage() {
   const qc = useQueryClient();
@@ -20,12 +22,57 @@ export function NotificationsPage() {
 
   const markRead = useMutation({
     mutationFn: (id: string) => notificationsApi.markRead(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: ["notifications"] });
+      const previous = qc.getQueryData<PaginatedResponse<Notification>>(["notifications"]);
+      qc.setQueryData<PaginatedResponse<Notification>>(["notifications"], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          results: old.results.map((item) =>
+            item.id === id ? { ...item, is_read: true } : item,
+          ),
+        };
+      });
+      return { previous };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previous) {
+        qc.setQueryData(["notifications"], context.previous);
+      }
+      toast.error("Failed to mark notification as read");
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["notifications-unread"] });
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
   });
 
   const markAll = useMutation({
     mutationFn: () => notificationsApi.markAllRead(),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: ["notifications"] });
+      const previous = qc.getQueryData<PaginatedResponse<Notification>>(["notifications"]);
+      qc.setQueryData<PaginatedResponse<Notification>>(["notifications"], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          results: old.results.map((item) => ({ ...item, is_read: true })),
+        };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        qc.setQueryData(["notifications"], context.previous);
+      }
+      toast.error("Failed to mark all notifications");
+    },
+    onSuccess: () => {
+      toast.success("All notifications marked as read");
+      qc.invalidateQueries({ queryKey: ["notifications-unread"] });
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
   });
 
   if (isLoading) {
@@ -58,7 +105,7 @@ export function NotificationsPage() {
             >
               <Card
                 className={cn(
-                  "glass-card cursor-pointer border-0 transition-all hover:shadow-elevated",
+                  "cursor-pointer transition-all hover:",
                   !n.is_read && "ring-1 ring-primary/30",
                 )}
                 onClick={() => !n.is_read && markRead.mutate(n.id)}

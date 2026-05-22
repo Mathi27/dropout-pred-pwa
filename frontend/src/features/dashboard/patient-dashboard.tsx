@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
 import {
   ArrowRight,
   Bell,
@@ -21,11 +20,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from "@/stores/auth-store";
-
-const container = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.06 } },
-};
 
 export function PatientDashboard() {
   const user = useAuthStore((s) => s.user);
@@ -58,15 +52,15 @@ export function PatientDashboard() {
   const recentNotifs = notifications?.results?.slice(0, 4) ?? [];
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-8">
+    <div className="space-y-8">
       <PageHeader
         title={`Welcome back, ${user?.first_name || "Patient"}`}
         description="Your treatment journey at a glance"
       />
 
       {nextAppt && !apptLoading && (
-        <motion.div variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}>
-          <Card className="hero-gradient overflow-hidden border-0 shadow-elevated">
+        <div>
+          <Card className="overflow-hidden ">
             <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
               <div className="space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">
@@ -89,7 +83,7 @@ export function PatientDashboard() {
               </Button>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -111,7 +105,12 @@ export function PatientDashboard() {
           { label: "Messages", icon: MessageSquare, href: "/notifications" },
           { label: "Payments", icon: CreditCard, href: "/appointments" },
         ].map((action) => (
-          <Button key={action.label} variant="outline" asChild className="h-auto justify-start gap-3 rounded-2xl border-border/60 p-4">
+          <Button
+            key={action.label}
+            variant="outline"
+            asChild
+            className="h-auto justify-start gap-3 rounded-xl border-border/60 p-4"
+          >
             <Link to={action.href}>
               <action.icon className="h-5 w-5 text-primary" />
               <span className="font-medium">{action.label}</span>
@@ -121,21 +120,18 @@ export function PatientDashboard() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="glass-card border-0">
+        <Card className="">
           <CardHeader>
             <CardTitle className="text-lg">Upcoming appointments</CardTitle>
             <CardDescription>Your scheduled visits</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {apptLoading ? (
-              <Skeleton className="h-16 w-full rounded-xl" />
+              <Skeleton className="h-16 w-full rounded-lg" />
             ) : upcoming?.length ? (
-              upcoming.map((a, i) => (
-                <motion.div
+              upcoming.map((a) => (
+                <div
                   key={a.id}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.05 }}
                   className="flex items-center justify-between rounded-xl border border-border/50 bg-background/50 p-4 transition-colors hover:bg-muted/30"
                 >
                   <div>
@@ -150,7 +146,7 @@ export function PatientDashboard() {
                     </p>
                   </div>
                   <StatusBadge status={a.status} />
-                </motion.div>
+                </div>
               ))
             ) : (
               <p className="py-4 text-center text-sm text-muted-foreground">No upcoming appointments</p>
@@ -158,7 +154,7 @@ export function PatientDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="glass-card border-0">
+        <Card className="">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle className="text-lg">Notifications</CardTitle>
@@ -170,7 +166,7 @@ export function PatientDashboard() {
           </CardHeader>
           <CardContent className="space-y-2">
             {notifLoading ? (
-              <Skeleton className="h-20 w-full rounded-xl" />
+              <Skeleton className="h-20 w-full rounded-lg" />
             ) : recentNotifs.length ? (
               recentNotifs.map((n) => (
                 <div
@@ -188,14 +184,14 @@ export function PatientDashboard() {
         </Card>
       </div>
 
-      <Card className="glass-card border-0">
+      <Card className="">
         <CardHeader>
           <CardTitle className="text-lg">Treatment progress</CardTitle>
           <CardDescription>Track your adherence journey</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           {txLoading ? (
-            <Skeleton className="h-16 w-full rounded-xl" />
+            <Skeleton className="h-16 w-full rounded-lg" />
           ) : treatments?.results?.length ? (
             treatments.results.map((t) => (
               <div key={t.id}>
@@ -204,11 +200,9 @@ export function PatientDashboard() {
                   <span className="font-semibold text-primary">{t.progress_percent}%</span>
                 </div>
                 <div className="h-2.5 overflow-hidden rounded-full bg-muted">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${t.progress_percent}%` }}
-                    transition={{ duration: 0.8, ease: "easeOut" }}
-                    className="h-full rounded-full bg-gradient-to-r from-primary to-teal-400"
+                  <div
+                    className="h-full rounded-full bg-primary transition-[width] duration-500"
+                    style={{ width: `${t.progress_percent}%` }}
                   />
                 </div>
               </div>
@@ -218,6 +212,6 @@ export function PatientDashboard() {
           )}
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 }
