@@ -18,6 +18,8 @@ from apps.core.querysets import get_patient_profile
 from apps.core.services import create_audit_log
 from apps.core.viewsets import SoftDeleteModelViewSet
 from apps.users.models import UserRole
+from apps.notifications.services import create_notification
+from apps.notifications.models import NotificationType
 
 
 class AppointmentViewSet(SoftDeleteModelViewSet):
@@ -68,7 +70,27 @@ class AppointmentViewSet(SoftDeleteModelViewSet):
             action="appointment.created",
             resource_type="appointment",
             resource_id=str(appt.id),
+            metadata={
+                "patient_id": str(appt.patient.id) if getattr(appt, "patient", None) else None,
+                "doctor_id": str(appt.doctor.id) if getattr(appt, "doctor", None) else None,
+                "scheduled_at": appt.scheduled_at.isoformat() if getattr(appt, "scheduled_at", None) else None,
+            },
         )
+
+        # Create an in-app notification for the patient so they see the booking
+        try:
+            if getattr(appt.patient, "user", None):
+                create_notification(
+                    user=appt.patient.user,
+                    title="Appointment scheduled",
+                    body=f"Your appointment is scheduled for {appt.scheduled_at.isoformat()}",
+                    notification_type=NotificationType.APPOINTMENT,
+                    actor=self.request.user,
+                    metadata={"appointment_id": str(appt.id)},
+                )
+        except Exception:
+            # Notification failure should not block appointment creation
+            pass
 
     @action(detail=True, methods=["post"], url_path="mark-attendance")
     def mark_attendance_action(self, request, pk=None):

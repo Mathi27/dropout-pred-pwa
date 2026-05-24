@@ -3,6 +3,8 @@ from django.utils import timezone
 from apps.appointments.models import Appointment, AppointmentStatus, AttendanceStatus
 from apps.core.querysets import filter_appointments_for_user
 from apps.core.services import create_audit_log
+from apps.notifications.services import create_notification
+from apps.notifications.models import NotificationType
 
 
 def get_appointments_queryset(user):
@@ -26,6 +28,19 @@ def mark_attendance(*, appointment: Appointment, attendance: str, user) -> Appoi
         resource_id=str(appointment.id),
         metadata={"attendance": attendance},
     )
+    # Notify the patient about attendance status
+    try:
+        if getattr(appointment.patient, "user", None):
+            create_notification(
+                user=appointment.patient.user,
+                title="Appointment update",
+                body=f"Your appointment on {appointment.scheduled_at.isoformat()} was marked as {attendance}",
+                notification_type=NotificationType.APPOINTMENT,
+                actor=user,
+                metadata={"appointment_id": str(appointment.id), "attendance": attendance},
+            )
+    except Exception:
+        pass
     return appointment
 
 
