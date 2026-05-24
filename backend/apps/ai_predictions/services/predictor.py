@@ -7,6 +7,7 @@ import pandas as pd
 from apps.ai_predictions.models import AIPrediction, ModelVersion, PredictionLog, PredictionStatus
 from apps.ai_predictions.services.features import FEATURE_NAMES, build_patient_features
 from apps.ai_predictions.services.risk import classify_risk
+from apps.core.services import create_audit_log
 
 
 def get_active_model_version():
@@ -55,6 +56,16 @@ def generate_prediction(*, patient, user=None, source="api") -> AIPrediction:
             features=features,
             prediction_source=source,
         )
+        # create an audit log so the realtime pipeline can broadcast this prediction
+        try:
+            create_audit_log(
+                actor=user,
+                action="ai_prediction.created",
+                resource_type="ai_prediction",
+                resource_id=str(prediction.id),
+            )
+        except Exception:
+            pass
         latency_ms = int((time.monotonic() - start) * 1000)
         PredictionLog.objects.create(
             patient=patient,

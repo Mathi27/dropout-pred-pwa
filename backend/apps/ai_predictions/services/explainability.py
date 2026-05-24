@@ -3,6 +3,7 @@ import pandas as pd
 import shap
 
 from apps.ai_predictions.models import ModelType, ShapExplanation
+from apps.core.services import create_audit_log
 from apps.ai_predictions.services.features import FEATURE_NAMES, build_patient_features
 from apps.ai_predictions.services.predictor import load_model
 
@@ -47,7 +48,7 @@ def get_or_create_explanation(prediction):
         reverse=True,
     )[:6]
 
-    return ShapExplanation.objects.create(
+    explanation = ShapExplanation.objects.create(
         prediction=prediction,
         patient=prediction.patient,
         model_version=model_version,
@@ -56,3 +57,14 @@ def get_or_create_explanation(prediction):
         top_features=top_features,
         feature_values=features,
     )
+    try:
+        create_audit_log(
+            actor=None,
+            action="shap_explanation.created",
+            resource_type="shap_explanation",
+            resource_id=str(explanation.id),
+            metadata={"prediction_id": str(prediction.id), "patient_id": str(prediction.patient.id)},
+        )
+    except Exception:
+        pass
+    return explanation
