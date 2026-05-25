@@ -1,143 +1,103 @@
-# DentalAI PWA
+# DentalAI
 
-AI-powered dental treatment adherence platform — INAHS 2026 Research .
+Operational AI platform for dental treatment adherence, interventions, and clinical intelligence.
 
-**Phase 1** delivers monorepo scaffolding, JWT authentication, RBAC foundation, and a responsive dashboard shell.
+DentalAI combines predictive risk modeling, intervention automation, and executive analytics with a production-style architecture for research and demo showcases.
 
-## Structure
+## Highlights
+
+- Predictive dropout risk with SHAP explainability
+- Automated intervention workflows and delivery tracking
+- Patient journey intelligence with adherence scoring
+- Executive analytics dashboards and cohort comparison
+- PWA-ready UI with polished SaaS aesthetics
+
+## Architecture
+
+- Frontend: React + Vite + Tailwind + shadcn/ui
+- Backend: Django 5 + DRF + JWT + Celery
+- Data: PostgreSQL
+- Queue: Redis
+- ML: scikit-learn + XGBoost + SHAP
+
+See documentation:
+- docs/architecture.md
+- docs/diagrams.md
+- docs/api.md
+- docs/deployment.md
+- docs/research.md
+
+## Screenshots (placeholders)
+
+![Dashboard overview](docs/assets/dashboard-overview.svg)
+![AI insights](docs/assets/ai-insights.svg)
+![Executive analytics](docs/assets/executive-analytics.svg)
+![Patient journey](docs/assets/patient-journey.svg)
+![Interventions](docs/assets/interventions.svg)
+
+## Quick start (local)
+
+### Backend
 
 ```
-dent-pwa/
-├── backend/          # Django 5 + DRF + JWT + Celery stubs
-├── frontend/         # React 18 + Vite + Tailwind + shadcn/ui
-├── ml/               # ML module stub (Phase 4)
-├── docker-compose.yml
-└── README.md
-```
-
-## Prerequisites
-
-- Python 3.11+
-- Node.js 20+
-- PostgreSQL 16 (or `docker compose up -d`)
-- Redis (optional for Celery; included in docker-compose)
-
-## Quick start
-
-### 1. Database & Redis (local)
-
-```bash
-cd /mnt/stuffs/PROJECTS/dent-pwa
-docker compose up -d
-```
-
-### 2. Backend
-
-```bash
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
 python manage.py migrate
-python manage.py createsuperuser   # optional
 python manage.py runserver
 ```
 
-API: `http://localhost:8000/api/v1/`
+API: http://localhost:8000/api/v1/
 
-### 3. Frontend
+### Frontend
 
-```bash
+```
 cd frontend
 npm install
 cp .env.example .env
 npm run dev
 ```
 
-App: `http://localhost:5173`
+App: http://localhost:5173
 
-## Environment variables
+## Demo data
 
-### Backend (`backend/.env`)
-
-| Variable | Description |
-|----------|-------------|
-| `DJANGO_SECRET_KEY` | Django secret key |
-| `DJANGO_DEBUG` | `True` for development |
-| `DATABASE_URL` | PostgreSQL connection string (Neon or local) |
-| `JWT_ACCESS_TOKEN_LIFETIME_MINUTES` | Default `15` |
-| `JWT_REFRESH_TOKEN_LIFETIME_DAYS` | Default `7` |
-| `CORS_ALLOWED_ORIGINS` | Frontend origins |
-| `CELERY_BROKER_URL` | Redis URL |
-
-**Neon example:**
+Seed curated hero patients and realistic analytics data:
 
 ```
-DATABASE_URL=postgresql://user:pass@ep-xxx.ap-south-1.aws.neon.tech/dentalai?sslmode=require
-```
-
-### Frontend (`frontend/.env`)
-
-| Variable | Description |
-|----------|-------------|
-| `VITE_API_BASE_URL` | `http://localhost:8000/api/v1` |
-
-## Migrations
-
-```bash
 cd backend
-source .venv/bin/activate
-python manage.py makemigrations
-python manage.py migrate
+python manage.py seed_demo_data
 ```
 
-## API routes (Phase 1)
+## Deployment
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/v1/health/` | Public | Health check |
-| POST | `/api/v1/auth/register/` | Public | Register user |
-| POST | `/api/v1/auth/login/` | Public | Login (JWT) |
-| POST | `/api/v1/auth/refresh/` | Public | Refresh access token |
-| GET | `/api/v1/auth/me/` | Bearer | Current user |
-| POST | `/api/v1/auth/logout/` | Bearer | Blacklist refresh token |
+Production templates and scripts:
+- backend/.env.production.example
+- frontend/.env.production.example
+- scripts/run_backend_prod.sh
+- scripts/run_celery_worker.sh
+- scripts/run_celery_beat.sh
+- scripts/build_frontend.sh
 
-## Roles (RBAC)
+Full guide: docs/deployment.md
 
-| Role | Dashboard focus |
-|------|-----------------|
-| `patient` | Treatment journey (placeholder) |
-| `doctor` | Patient risk overview |
-| `receptionist` | Schedule & attendance |
-| `admin` | Clinic KPIs |
+## AI workflow summary
 
-JWT access tokens include `role` and optional `clinic_id` claims.
+1. Feature builder extracts behavioral signals
+2. Model inference produces risk tier and probability
+3. SHAP explanations provide top drivers
+4. Automation queues interventions for high-risk patients
+5. Analytics aggregate risk, outcomes, and engagement
 
-## Dev servers
+## API documentation
 
-```bash
-# Terminal 1 — backend
-cd backend && source .venv/bin/activate && python manage.py runserver
+docs/api.md includes endpoint descriptions, auth flows, and RBAC summary.
 
-# Terminal 2 — frontend
-cd frontend && npm run dev
-```
+## Research summary
 
-## Verify setup
-
-```bash
-cd backend && .venv/bin/python manage.py check
-cd frontend && npm run build
-```
-
-## Phase roadmap
-
-- **Phase 1** (current): Auth, RBAC, dashboard shell
-- **Phase 2**: UI/UX design system
-- **Phase 3**: Full backend APIs + appointments
-- **Phase 4**: ML + GenAI integration
-- **Phase 5**: PWA offline + push notifications
+docs/research.md covers methodology, evaluation, and explainability.
 
 ## License
 
