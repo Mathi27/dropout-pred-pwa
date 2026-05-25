@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import {
   Area,
   AreaChart,
@@ -19,7 +18,6 @@ const tooltipStyle = {
   borderRadius: "12px",
   border: "1px solid hsl(var(--border))",
   background: "hsl(var(--card))",
-  boxShadow: "0 4px 16px -4px rgb(0 0 0 / 0.1)",
   fontSize: "12px",
 };
 
@@ -30,7 +28,7 @@ export function AppointmentTrendChart({ data }: { data: TrendPoint[] }) {
   }));
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}>
+    <div>
       <ResponsiveContainer width="100%" height={280}>
         <AreaChart data={formatted} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
           <defs>
@@ -74,6 +72,6 @@ export function AppointmentTrendChart({ data }: { data: TrendPoint[] }) {
           />
         </AreaChart>
       </ResponsiveContainer>
-    </motion.div>
+    </div>
   );
 }
