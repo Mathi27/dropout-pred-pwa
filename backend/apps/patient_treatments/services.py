@@ -4,6 +4,8 @@ from apps.core.querysets import filter_by_patient_relation, get_doctor_profile, 
 from apps.core.services import create_audit_log
 from apps.patient_treatments.models import PatientTreatment, TreatmentStatus
 from apps.users.models import UserRole
+from apps.notifications.services import create_notification
+from apps.notifications.models import NotificationType
 
 
 def get_patient_treatments_queryset(user):
@@ -21,6 +23,18 @@ def create_patient_treatment(*, user, validated_data) -> PatientTreatment:
         resource_type="patient_treatment",
         resource_id=str(pt.id),
     )
+    try:
+        if getattr(pt.patient, "user", None):
+            create_notification(
+                user=pt.patient.user,
+                title="Treatment plan added",
+                body=f"A new treatment '{pt.treatment.name}' was added to your plan.",
+                notification_type=NotificationType.TREATMENT,
+                actor=user,
+                metadata={"treatment_id": str(pt.id)},
+            )
+    except Exception:
+        pass
     return pt
 
 
@@ -39,4 +53,16 @@ def update_progress(*, treatment: PatientTreatment, progress: int, user) -> Pati
         resource_id=str(treatment.id),
         metadata={"progress": treatment.progress_percent},
     )
+    try:
+        if getattr(treatment.patient, "user", None):
+            create_notification(
+                user=treatment.patient.user,
+                title="Treatment progress updated",
+                body=f"Progress updated to {treatment.progress_percent}% for {treatment.treatment.name}",
+                notification_type=NotificationType.TREATMENT,
+                actor=user,
+                metadata={"treatment_id": str(treatment.id), "progress": treatment.progress_percent},
+            )
+    except Exception:
+        pass
     return treatment
